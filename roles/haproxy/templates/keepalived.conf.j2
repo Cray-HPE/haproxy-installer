@@ -1,0 +1,75 @@
+vrrp_script haproxy-check {
+    script "/usr/bin/kill -0 haproxy"
+    interval 2
+    weight 20
+}
+
+{% if (networks.node_management.k8s_virtual_ip is defined) %}
+vrrp_instance kube-apiserver-nmn-vip {
+    state BACKUP
+    priority 101
+{% for iface in hostvars[inventory_hostname]['ansible_facts']['interfaces'] %}
+{% if (hostvars[inventory_hostname]['ansible_facts'][iface] is defined) %}
+{% if (hostvars[inventory_hostname]['ansible_facts'][iface].ipv4 is defined) %}
+{% if hostvars[inventory_hostname]['ansible_facts'][iface].ipv4.address == hostvars[inventory_hostname].networks_node_management_ip %}
+    interface {{ iface }}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endfor %}
+    virtual_router_id 47
+    advert_int 3
+
+    unicast_src_ip {{ hostvars[inventory_hostname].networks_node_management_ip }}
+    unicast_peer {
+{% for host in groups['managers'] %}
+{% if inventory_hostname != host %}
+        {{ hostvars[host].networks_node_management_ip }}
+{% endif %}
+{% endfor %}
+    }
+
+    virtual_ipaddress {
+        {{ networks.node_management.k8s_virtual_ip }}
+    }
+
+    track_script {
+        haproxy-check weight 20
+    }
+}
+{% endif %}
+
+{% if (networks.customer_management.k8s_virtual_ip is defined) %}
+vrrp_instance kube-apiserver-cmn-vip {
+    state BACKUP
+    priority 101
+{% for iface in hostvars[inventory_hostname]['ansible_facts']['interfaces'] %}
+{% if (hostvars[inventory_hostname]['ansible_facts'][iface] is defined) %}
+{% if (hostvars[inventory_hostname]['ansible_facts'][iface].ipv4 is defined) %}
+{% if hostvars[inventory_hostname]['ansible_facts'][iface].ipv4.address == hostvars[inventory_hostname].networks_customer_mgmt_ip %}
+    interface {{ iface }}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endfor %}
+    virtual_router_id 46
+    advert_int 3
+
+    unicast_src_ip {{ hostvars[inventory_hostname].networks_customer_mgmt_ip }}
+    unicast_peer {
+{% for host in groups['managers'] %}
+{% if inventory_hostname != host %}
+        {{ hostvars[host].networks_customer_mgmt_ip }}
+{% endif %}
+{% endfor %}
+    }
+
+    virtual_ipaddress {
+        {{ networks.customer_management.k8s_virtual_ip }}
+    }
+
+    track_script {
+        haproxy-check weight 20
+    }
+}
+{% endif %}

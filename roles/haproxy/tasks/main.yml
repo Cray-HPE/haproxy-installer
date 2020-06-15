@@ -1,0 +1,16 @@
+# Copyright 2019, Cray Inc. All Rights Reserved.
+---
+
+- name: Set up haproxy and keepalived
+  block:
+
+    - name: Set up haproxy
+      import_tasks: haproxy.yml
+
+    - name: Set up keepalived
+      import_tasks: keepalived.yml
+      when: networks.customer_management.k8s_virtual_ip is defined or networks.node_management.k8s_virtual_ip is defined
+
+  when:
+    - haproxy_enabled
+    - inventory_hostname in groups['managers']

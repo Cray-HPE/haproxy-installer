@@ -1,0 +1,40 @@
+# Copyright 2019, Cray Inc. All Rights Reserved.
+---
+
+# Each haproxy needs to be able to bind to the VIP, even when
+# the VIP isn't assigned to that node.  This is accomplished
+# by setting the sysctl option to allow non-local binds.
+- name: Allow non-local binds via sysctl kernel parameter
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_set: yes
+  with_items:
+    - {name: net.ipv4.ip_nonlocal_bind, value: 1}
+    - {name: net.ipv6.ip_nonlocal_bind, value: 1}
+
+- name: Install haproxy
+  zypper:
+    name: haproxy
+  notify: reload haproxy
+
+- name: Create haproxy config directory
+  file:
+    state: directory
+    dest: /etc/haproxy
+
+- name: Configure haproxy
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+  notify: reload haproxy
+
+- name: Restart haproxy if things change
+  meta: flush_handlers
+
+- name: Make sure haproxy is running, it's used by later roles.
+  systemd:
+    enabled: yes
+    name: haproxy
+    state: started
