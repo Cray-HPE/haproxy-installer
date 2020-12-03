@@ -1,0 +1,16 @@
+# Copyright 2019, Cray Inc. All Rights Reserved.
+---
+
+- name: reload haproxy
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    name: haproxy
+    state: reloaded
+
+- name: reload keepalived
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+    name: keepalived
+    state: reloaded

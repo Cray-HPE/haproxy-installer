@@ -1,0 +1,26 @@
+# Copyright 2019, Cray Inc. All Rights Reserved.
+
+# Enable or disable setting up haproxy.
+haproxy_enabled: true
+
+# The port that haproxy will accept connections on. Requests to this port are
+# forwarded to etcd on the master nodes.
+haproxy_etcd_port: 2381
+
+# The HAProxy stats service is available on this port on localhost
+haproxy_stats_port: 2382
+
+# The HAProxy port for the Kubernetes API server. Requests on this port to the
+# VIP are forwarded to the kube-apiserver on the master nodes.  This cannot be
+# the same port as "kube_apiserver_port", as the kube-apiserver bind will fail.
+haproxy_kube_apiserver_port: 6442
+
+# The port of the Kubernetes API server. Requests on the
+# haproxy_kube_apiserver_port port to the VIP are forwarded
+# to this port the master nodes.
+kube_apiserver_port: 6443
+
+# Default timeouts
+haproxy_timeout_connect: "10s"
+haproxy_timeout_client: "600s"
+haproxy_timeout_server: "600s"

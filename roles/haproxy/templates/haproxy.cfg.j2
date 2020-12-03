@@ -1,0 +1,75 @@
+global
+  log /dev/log daemon
+  maxconn 32768
+  chroot /var/lib/haproxy
+  user haproxy
+  group haproxy
+  daemon
+  stats socket /var/lib/haproxy/stats user haproxy group haproxy mode 0640 level operator
+  tune.bufsize 32768
+  tune.ssl.default-dh-param 2048
+  ssl-default-bind-ciphers ALL:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!RC4:!ADH:!LOW@STRENGTH
+
+defaults
+  log     global
+  mode    http
+  option  log-health-checks
+  option  log-separate-errors
+  option  dontlog-normal
+  option  dontlognull
+  option  httplog
+  option  socket-stats
+  retries 3
+  option  redispatch
+  maxconn 10000
+  timeout connect   {{ haproxy_timeout_connect }}
+  timeout client    {{ haproxy_timeout_client }}
+  timeout server    {{ haproxy_timeout_server }}
+
+listen stats
+  bind 127.0.0.1:{{ haproxy_stats_port }}
+  stats enable
+  stats uri     /
+  stats refresh 5s
+  rspadd Server:\ haproxy/1.6
+
+frontend etcd
+    bind 127.0.0.1:{{ haproxy_etcd_port }}
+    option tcplog
+    mode tcp
+    default_backend etcd
+
+backend etcd
+    mode tcp
+    balance roundrobin
+    option tcp-check
+{% for host in groups['managers'] %}
+    server etcd{{ loop.index }} {{ hostvars[host].networks_node_management_ip }}:{{ kube_etcd_client_port }} check weight {{ 10 if loop.index == 1 else 100 }}
+{% endfor %}
+
+{% if (networks.node_management.k8s_virtual_ip is defined or networks.customer_management.k8s_virtual_ip is defined) %}
+{% if (networks.node_management.k8s_virtual_ip is defined) %}
+frontend k8s-api-nmn
+    bind {{ networks.node_management.k8s_virtual_ip }}:{{ haproxy_kube_apiserver_port }}
+    option tcplog
+    mode tcp
+    default_backend k8s-api
+{% endif %}
+
+{% if (networks.customer_management.k8s_virtual_ip is defined) %}
+frontend k8s-api-cmn
+    bind {{ networks.customer_management.k8s_virtual_ip }}:{{ haproxy_kube_apiserver_port }}
+    option tcplog
+    mode tcp
+    default_backend k8s-api
+{% endif %}
+
+backend k8s-api
+    mode tcp
+    option tcp-check
+    balance roundrobin
+    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+{% for host in groups['managers'] %}
+    server k8s-api-{{ loop.index }} {{ hostvars[host].networks_node_management_ip }}:{{ kube_apiserver_port }} check
+{% endfor %}
+{% endif %}

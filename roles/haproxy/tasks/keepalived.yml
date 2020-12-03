@@ -1,0 +1,27 @@
+# Copyright 2019, Cray Inc. All Rights Reserved.
+---
+
+- name: Install keepalived
+  zypper:
+    name: keepalived
+  notify: reload keepalived
+
+- name: Create keepalived config directory
+  file:
+    state: directory
+    dest: /etc/keepalived
+
+- name: Configure keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify: reload keepalived
+
+- name: Restart keepalived if things change
+  meta: flush_handlers
+
+- name: Make sure keepalived is running, it's used by later roles
+  systemd:
+    enabled: yes
+    name: keepalived
+    state: started
