@@ -4,5 +4,6 @@ rpmBuild(
     channel: "casmpet-builds",
     product: "csm",
     target_node: "ncn",
-    fanout_params: ["sle15", "sle15sp1"]
+    fanout_params: ["sle15", "sle15sp1"],
+    githubPushRepo: "Cray-HPE/haproxy-installer"
 )
