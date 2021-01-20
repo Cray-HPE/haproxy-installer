@@ -5,5 +5,6 @@ rpmBuild(
     product: "csm",
     target_node: "ncn",
     fanout_params: ["sle15", "sle15sp1"],
-    githubPushRepo: "Cray-HPE/haproxy-installer"
+    githubPushRepo: "Cray-HPE/haproxy-installer",
+    githubPushBranches: /(release\/.*|master)/
 )
