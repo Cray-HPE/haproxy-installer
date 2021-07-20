@@ -1,3 +1,6 @@
+
+# This repository is no longer built and hasn't been used since Shasta 1.4
+
 # Haproxy and Keepalived for Resiliancy
 
 This sets up an haproxy instance to distribute requests to
